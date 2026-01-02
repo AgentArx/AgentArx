@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgentArx</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div>
+                    <h1>🛡️ AgentArx</h1>
+                    <p class="subtitle">Automated Security Testing Framework</p>
+                </div>
+                <button id="settings-btn" class="btn-settings" title="Settings">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    Settings
+                </button>
+            </div>
+        </header>
+
+        <!-- Configuration Warning Banner (hidden by default) -->
+        <div id="config-warning" class="config-warning" style="display: none;">
+            <strong>⚠️ Configuration Error:</strong> <span id="config-error-message"></span>
+        </div>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Scenarios Section -->
+            <section class="scenarios-section">
+                <h2>Attack Scenarios</h2>
+                <div id="scenarios-list" class="scenarios-list">
+                    <p class="loading">Loading scenarios...</p>
+                </div>
+            </section>
+
+            <!-- Log Viewer Section -->
+            <section class="log-section">
+                <div class="log-header">
+                    <h2>Logs</h2>
+                    <div class="logs-controls-center">
+                        <span id="reporter-status" class="reporter-status">Reporter: Loading...</span>
+                        <label class="export-checkbox">
+                            <input type="checkbox" id="export-findings">
+                            Export findings
+                        </label>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button id="copy-logs" class="btn-copy" title="Copy logs to clipboard">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" stroke-width="2"/>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke-width="2"/>
+                            </svg>
+                            Copy
+                        </button>
+                        <button id="clear-logs" class="btn-secondary">Clear</button>
+                    </div>
+                </div>
+                <div id="log-viewer" class="log-viewer">
+                    <p class="placeholder">Select a scenario and click "Run Test" to view output...</p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Settings</h2>
+                <button class="modal-close" onclick="closeSettingsModal()">&times;</button>
+            </div>
+            
+            <!-- Tab Navigation -->
+            <div class="modal-tabs">
+                <button class="tab-btn active" onclick="switchTab('target')">Target Config</button>
+                <button class="tab-btn" onclick="switchTab('env')">Environment</button>
+                <button class="tab-btn" onclick="switchTab('prompts')">Agent Prompts</button>
+            </div>
+            
+            <div class="modal-body">
+                <!-- Target Config Tab -->
+                <div id="tab-target" class="tab-content active">
+                    <h3>Target Configuration</h3>
+                    <p class="config-description">Edit the target system configuration. Required fields: target_id, name, network.url</p>
+                    
+                    <div class="config-editor-container">
+                        <textarea id="config-editor" class="config-editor" spellcheck="false"></textarea>
+                    </div>
+                    
+                    <div class="config-info">
+                        <p class="info-text">💡 <strong>Tip:</strong> Use <code>${ENV:VARIABLE_NAME}</code> syntax for environment variables (e.g., API keys)</p>
+                    </div>
+                </div>
+                
+                <!-- Environment Tab -->
+                <div id="tab-env" class="tab-content">
+                    <h3>Environment Variables</h3>
+                    <p class="config-description">Configure system environment variables. Changes require server restart.</p>
+                    
+                    <div id="env-form" class="env-form">
+                        <p class="loading">Loading environment variables...</p>
+                    </div>
+                    
+                    <div class="config-info">
+                        <p class="info-text">⚠️ <strong>Security:</strong> Do not commit sensitive values to version control</p>
+                    </div>
+                </div>
+                
+                <!-- Agent Prompts Tab -->
+                <div id="tab-prompts" class="tab-content">
+                    <h3>Agent Prompts</h3>
+                    <p class="config-description">Configure agent behavior and prompts for each assessment phase</p>
+                    
+                    <div class="agent-selector">
+                        <label for="agent-select">Select Agent:</label>
+                        <select id="agent-select" class="agent-select" onchange="switchAgent(this.value)">
+                            <option value="recon">Reconnaissance Agent</option>
+                            <option value="attack">Attack Agent</option>
+                            <option value="analyze">Analysis Agent</option>
+                            <option value="report">Report Agent</option>
+                        </select>
+                    </div>
+                    
+                    <div class="config-editor-container">
+                        <textarea id="prompt-editor" class="config-editor" spellcheck="false"></textarea>
+                    </div>
+                    
+                    <div class="prompt-actions">
+                        <button class="btn-secondary btn-small" onclick="resetCurrentPrompt()">Reset to Default</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeSettingsModal()">Cancel</button>
+                <button id="save-settings-btn" class="btn-primary" onclick="saveCurrentTab()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let currentSessionId = null;
+        let eventSource = null;
+        let pollInterval = null;
+
+        // API base URL
+        const API_BASE = window.location.origin;
+
+        // Load scenarios on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            checkConfiguration();
+            loadReporterStatus();
+            loadScenarios();
+            
+            // Settings button
+            document.getElementById('settings-btn').addEventListener('click', () => {
+                openSettingsModal();
+            });
+            
+            // Load export setting from localStorage
+            const exportCheckbox = document.getElementById('export-findings');
+            const savedExportSetting = localStorage.getItem('exportFindings');
+            if (savedExportSetting === 'true') {
+                exportCheckbox.checked = true;
+            }
+            
+            // Save export setting when changed
+            exportCheckbox.addEventListener('change', (e) => {
+                localStorage.setItem('exportFindings', e.target.checked);
+            });
+            
+            // Clear logs button
+            document.getElementById('clear-logs').addEventListener('click', () => {
+                clearLogs();
+            });
+            
+            // Copy logs button
+            document.getElementById('copy-logs').addEventListener('click', () => {
+                copyLogs();
+            });
+        });
+
+        // Check configuration status
+        async function checkConfiguration() {
+            try {
+                const response = await fetch(`${API_BASE}/api/config/status`);
+                const data = await response.json();
+                
+                if (!data.configured && data.errors.length > 0) {
+                    const warningDiv = document.getElementById('config-warning');
+                    const messageSpan = document.getElementById('config-error-message');
+                    messageSpan.textContent = data.errors.join('. ');
+                    warningDiv.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Failed to check configuration:', error);
+            }
+        }
+
+        // Load reporter status
+        async function loadReporterStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/api/reporter/status`);
+                const data = await response.json();
+                
+                const statusElement = document.getElementById('reporter-status');
+                statusElement.textContent = `Reporter: ${data.reporter_name}`;
+                statusElement.title = `Type: ${data.reporter_type}, Configured: ${data.configured}`;
+            } catch (error) {
+                console.error('Failed to load reporter status:', error);
+                document.getElementById('reporter-status').textContent = 'Reporter: Error';
+            }
+        }
+
+        // Load available scenarios
+        async function loadScenarios() {
+            try {
+                const response = await fetch(`${API_BASE}/api/scenarios`);
+                const data = await response.json();
+                
+                renderScenarios(data.scenarios);
+            } catch (error) {
+                console.error('Failed to load scenarios:', error);
+                document.getElementById('scenarios-list').innerHTML = 
+                    '<p class="error">Failed to load scenarios</p>';
+            }
+        }
+
+        // Render scenarios list
+        function renderScenarios(scenarios) {
+            const container = document.getElementById('scenarios-list');
+            
+            if (scenarios.length === 0) {
+                container.innerHTML = '<p class="empty">No scenarios found</p>';
+                return;
+            }
+
+            container.innerHTML = '';
+            
+            scenarios.forEach(scenario => {
+                const card = document.createElement('div');
+                card.className = 'scenario-card';
+                
+                const status = getStatusBadge(scenario.status);
+                
+                card.innerHTML = `
+                    <div class="scenario-info">
+                        <h3 class="scenario-name">${escapeHtml(scenario.name)}</h3>
+                        <p class="scenario-id">${escapeHtml(scenario.id)}</p>
+                        <span class="scenario-category">${escapeHtml(scenario.category)}</span>
+                    </div>
+                    <div class="scenario-actions">
+                        ${status}
+                        <button 
+                            class="btn-primary" 
+                            onclick="runScenario('${scenario.id}')"
+                            ${scenario.status === 'running' ? 'disabled' : ''}
+                        >
+                            ${scenario.status === 'running' ? 'Running...' : 'Run Test'}
+                        </button>
+                    </div>
+                `;
+                
+                container.appendChild(card);
+            });
+        }
+
+        // Get status badge HTML
+        function getStatusBadge(status) {
+            const badges = {
+                'ready': '<span class="status-badge status-ready">Ready</span>',
+                'running': '<span class="status-badge status-running">Running</span>',
+                'completed': '<span class="status-badge status-completed">Completed</span>',
+                'failed': '<span class="status-badge status-failed">Failed</span>'
+            };
+            return badges[status] || badges['ready'];
+        }
+
+        // Run a scenario
+        async function runScenario(scenarioId) {
+            try {
+                addLog(`Starting test: ${scenarioId}`, 'info');
+                
+                // Get export setting
+                const exportFindings = document.getElementById('export-findings').checked;
+                
+                const response = await fetch(`${API_BASE}/api/run/${scenarioId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        export_findings: exportFindings
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (!data.success) {
+                    // Show error in log
+                    addLog(`Error: ${data.error}`, 'error');
+                    
+                    // For configuration errors, show prominent alert
+                    if (response.status === 400 && data.error.includes('Configuration')) {
+                        alert(`❌ Configuration Error\n\n${data.error}\n\nPlease fix your configuration and restart the server.`);
+                    }
+                    return;
+                }
+                
+                currentSessionId = data.session_id;
+                addLog(`Session started: ${data.session_id}`, 'success');
+                
+                // Start streaming logs
+                streamLogs(data.session_id);
+                
+                // Refresh scenarios list
+                loadScenarios();
+                
+            } catch (error) {
+                console.error('Failed to run scenario:', error);
+                addLog(`Failed to start test: ${error.message}`, 'error');
+            }
+        }
+
+        // Stream logs using Server-Sent Events
+        function streamLogs(sessionId) {
+            // Close existing connection
+            if (eventSource) {
+                eventSource.close();
+            }
+            
+            // Start polling for scenario status updates
+            startPolling();
+            
+            // Create new connection
+            eventSource = new EventSource(`${API_BASE}/api/stream/${sessionId}`);
+            
+            eventSource.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                
+                if (data.type === 'log') {
+                    addLog(data.message, 'log');
+                } else if (data.type === 'status') {
+                    addLog(`\\n=== Test ${data.status} ===\\n`, 'info');
+                    
+                    // Close connection on completion
+                    if (data.status === 'completed' || data.status === 'failed') {
+                        eventSource.close();
+                        loadScenarios(); // Refresh scenarios list
+                        stopPolling(); // Stop polling when test completes
+                    }
+                } else if (data.type === 'error') {
+                    addLog(`Error: ${data.message}`, 'error');
+                    eventSource.close();
+                    stopPolling(); // Stop polling on error
+                }
+            };
+            
+            eventSource.onerror = (error) => {
+                console.error('SSE error:', error);
+                eventSource.close();
+                addLog('Connection to server lost', 'error');
+                stopPolling(); // Stop polling on connection error
+            };
+        }
+
+        // Add log message to viewer
+        function addLog(message, type = 'log') {
+            const viewer = document.getElementById('log-viewer');
+            
+            // Remove placeholder if present
+            const placeholder = viewer.querySelector('.placeholder');
+            if (placeholder) {
+                placeholder.remove();
+            }
+            
+            const line = document.createElement('div');
+            line.className = `log-line log-${type}`;
+            line.textContent = message;
+            
+            viewer.appendChild(line);
+            
+            // Auto-scroll to bottom
+            viewer.scrollTop = viewer.scrollHeight;
+        }
+
+        // Clear logs
+        function clearLogs() {
+            const viewer = document.getElementById('log-viewer');
+            viewer.innerHTML = '<p class="placeholder">Select a scenario and click "Run Test" to view output...</p>';
+            
+            // Close SSE connection
+            if (eventSource) {
+                eventSource.close();
+                eventSource = null;
+            }
+            
+            currentSessionId = null;
+        }
+        
+        // Copy logs to clipboard
+        async function copyLogs() {
+            const viewer = document.getElementById('log-viewer');
+            const placeholder = viewer.querySelector('.placeholder');
+            
+            if (placeholder) {
+                return; // Nothing to copy
+            }
+            
+            const logLines = viewer.querySelectorAll('.log-line');
+            const logText = Array.from(logLines).map(line => line.textContent).join('\n');
+            
+            try {
+                await navigator.clipboard.writeText(logText);
+                
+                // Visual feedback
+                const copyBtn = document.getElementById('copy-logs');
+                const originalText = copyBtn.innerHTML;
+                copyBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width: 16px; height: 16px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>Copied!';
+                
+                setTimeout(() => {
+                    copyBtn.innerHTML = originalText;
+                }, 2000);
+            } catch (error) {
+                console.error('Failed to copy logs:', error);
+                addLog('Failed to copy logs to clipboard', 'error');
+            }
+        }
+
+        // Escape HTML to prevent XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Polling control functions
+        function startPolling() {
+            // Clear any existing interval
+            if (pollInterval) {
+                clearInterval(pollInterval);
+            }
+            // Poll every 5 seconds while test is running
+            pollInterval = setInterval(() => {
+                loadScenarios();
+            }, 5000);
+        }
+
+        function stopPolling() {
+            if (pollInterval) {
+                clearInterval(pollInterval);
+                pollInterval = null;
+            }
+        }
+
+        // Settings Modal Functions
+        let currentTab = 'target';
+        let currentAgent = 'recon';
+        
+        async function openSettingsModal() {
+            const modal = document.getElementById('settings-modal');
+            
+            // Load target config
+            await loadTargetConfig();
+            
+            // Load environment variables
+            await loadEnvironmentConfig();
+            
+            // Load initial agent prompt (recon)
+            await loadCurrentPrompt();
+            
+            modal.style.display = 'flex';
+        }
+        
+        function switchAgent(agentName) {
+            currentAgent = agentName;
+            loadCurrentPrompt();
+        }
+        
+        function switchTab(tabName) {
+            currentTab = tabName;
+            
+            // Update tab buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+        }
+        
+        async function loadTargetConfig() {
+            const editor = document.getElementById('config-editor');
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/config/target`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    editor.value = JSON.stringify(data.config, null, 2);
+                } else {
+                    editor.value = `// Error loading config: ${data.error}\n// Please fix the config file manually`;
+                }
+            } catch (error) {
+                console.error('Failed to load config:', error);
+                editor.value = `// Error loading config: ${error.message}`;
+            }
+        }
+        
+        async function loadEnvironmentConfig() {
+            const formContainer = document.getElementById('env-form');
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/config/env`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    renderEnvironmentForm(data.variables);
+                } else {
+                    formContainer.innerHTML = `<p class="error">Error loading environment: ${data.error}</p>`;
+                }
+            } catch (error) {
+                console.error('Failed to load environment:', error);
+                formContainer.innerHTML = `<p class="error">Error loading environment: ${error.message}</p>`;
+            }
+        }
+        
+        function renderEnvironmentForm(variables) {
+            const formContainer = document.getElementById('env-form');
+            formContainer.innerHTML = '';
+            
+            variables.forEach(variable => {
+                const fieldGroup = document.createElement('div');
+                fieldGroup.className = 'env-field-group';
+                
+                const label = document.createElement('label');
+                label.className = 'env-label';
+                label.textContent = variable.key;
+                label.setAttribute('for', `env-${variable.key}`);
+                
+                const inputWrapper = document.createElement('div');
+                inputWrapper.className = 'env-input-wrapper';
+                
+                const input = document.createElement('input');
+                input.type = variable.is_sensitive ? 'password' : 'text';
+                input.id = `env-${variable.key}`;
+                input.className = 'env-input';
+                input.value = variable.value;
+                input.dataset.key = variable.key;
+                
+                inputWrapper.appendChild(input);
+                
+                // Add eye icon for sensitive fields
+                if (variable.is_sensitive) {
+                    const toggleBtn = document.createElement('button');
+                    toggleBtn.className = 'env-toggle-visibility';
+                    toggleBtn.type = 'button';
+                    toggleBtn.innerHTML = `
+                        <svg xmlns=\"http://www.w3.org/2000/svg\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\">
+                            <path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M15 12a3 3 0 11-6 0 3 3 0 016 0z\" />
+                            <path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z\" />
+                        </svg>
+                    `;
+                    toggleBtn.onclick = () => {
+                        input.type = input.type === 'password' ? 'text' : 'password';
+                    };
+                    inputWrapper.appendChild(toggleBtn);
+                }
+                
+                fieldGroup.appendChild(label);
+                fieldGroup.appendChild(inputWrapper);
+                formContainer.appendChild(fieldGroup);
+            });
+        }
+        
+        async function loadCurrentPrompt() {
+            const editor = document.getElementById('prompt-editor');
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/config/prompts/${currentAgent}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    editor.value = data.content;
+                } else {
+                    editor.value = `# Error loading prompt: ${data.error}`;
+                }
+            } catch (error) {
+                console.error(`Failed to load ${currentAgent} prompt:`, error);
+                editor.value = `# Error loading prompt: ${error.message}`;
+            }
+        }
+        
+        async function saveCurrentTab() {
+            switch (currentTab) {
+                case 'target':
+                    await saveTargetConfig();
+                    break;
+                case 'env':
+                    await saveEnvironmentConfig();
+                    break;
+                case 'prompts':
+                    await savePromptConfig(currentAgent);
+                    break;
+            }
+        }
+
+        function closeSettingsModal() {
+            const modal = document.getElementById('settings-modal');
+            modal.style.display = 'none';
+        }
+
+        async function saveTargetConfig() {
+            const editor = document.getElementById('config-editor');
+            const configText = editor.value;
+            
+            try {
+                // Validate JSON
+                let config;
+                try {
+                    config = JSON.parse(configText);
+                } catch (e) {
+                    alert('❌ Invalid JSON\n\n' + e.message);
+                    return;
+                }
+                
+                // Validate required fields
+                const required = ['target_id', 'name', 'network'];
+                const missing = required.filter(field => !config[field]);
+                
+                if (missing.length > 0) {
+                    alert('❌ Missing Required Fields\n\n' + missing.join(', '));
+                    return;
+                }
+                
+                if (!config.network.url) {
+                    alert('❌ Missing Required Field\n\nnetwork.url is required');
+                    return;
+                }
+                
+                // Confirm save
+                const confirmed = confirm(
+                    '⚠️ Save Configuration?\n\n' +
+                    'This will update the target system configuration.\n\n' +
+                    'Target: ' + config.name + '\n' +
+                    'URL: ' + config.network.url
+                );
+                
+                if (!confirmed) {
+                    return;
+                }
+                
+                // Save config
+                const response = await fetch(`${API_BASE}/api/config/target`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(config)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('✅ Configuration Saved Successfully');
+                    closeSettingsModal();
+                } else {
+                    alert('❌ Save Failed\n\n' + data.error);
+                }
+                
+            } catch (error) {
+                console.error('Failed to save config:', error);
+                alert('❌ Save Failed\n\n' + error.message);
+            }
+        }
+        
+        async function saveEnvironmentConfig() {
+            const inputs = document.querySelectorAll('.env-input');
+            const variables = [];
+            
+            inputs.forEach(input => {
+                variables.push({
+                    key: input.dataset.key,
+                    value: input.value
+                });
+            });
+            
+            if (variables.length === 0) {
+                alert('❌ No variables to save');
+                return;
+            }
+            
+            // Confirm save
+            const confirmed = confirm(
+                '⚠️ Save Environment Variables?\n\n' +
+                'This will update the .env file.\n' +
+                'Server restart required for changes to take effect.'
+            );
+            
+            if (!confirmed) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/config/env`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ variables })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('✅ Environment Configuration Saved\n\nPlease restart the server for changes to take effect.');
+                } else {
+                    alert('❌ Save Failed\n\n' + data.error);
+                }
+            } catch (error) {
+                console.error('Failed to save environment:', error);
+                alert('❌ Save Failed\n\n' + error.message);
+            }
+        }
+        
+        async function savePromptConfig(agentName) {
+            const editor = document.getElementById('prompt-editor');
+            const content = editor.value;
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/config/prompts/${agentName}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ content })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert(`✅ ${agentName.charAt(0).toUpperCase() + agentName.slice(1)} Agent Prompt Saved`);
+                } else {
+                    alert('❌ Save Failed\n\n' + data.error);
+                }
+            } catch (error) {
+                console.error(`Failed to save ${agentName} prompt:`, error);
+                alert('❌ Save Failed\n\n' + error.message);
+            }
+        }
+        
+        async function resetCurrentPrompt() {
+            const agentName = currentAgent;
+            const agentLabel = document.getElementById('agent-select').selectedOptions[0].text;
+            
+            const confirmed = confirm(
+                `⚠️ Reset ${agentLabel}?\n\n` +
+                'This will restore the prompt to its default configuration.\n' +
+                'Any custom changes will be lost.'
+            );
+            
+            if (!confirmed) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/config/prompts/${agentName}/reset`, {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('✅ ' + data.message);
+                    // Reload the prompt
+                    await loadCurrentPrompt();
+                } else {
+                    alert('❌ Reset Failed\n\n' + data.error);
+                }
+            } catch (error) {
+                console.error(`Failed to reset ${agentName} prompt:`, error);
+                alert('❌ Reset Failed\n\n' + error.message);
+            }
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('settings-modal');
+            if (event.target === modal) {
+                closeSettingsModal();
+            }
+        }
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeSettingsModal();
+            }
+        });
+    </script>
+</body>
+</html>

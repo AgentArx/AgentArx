@@ -1,0 +1,15 @@
+
+# Core dependencies with pinned versions for faster installs
+openai==1.109.1
+pydantic==2.12.5
+requests==2.31.0
+python-dotenv==1.2.1
+pytest==7.2.0
+pyyaml==6.0.2
+crawl4ai==0.3.745
+ddgs==9.9.2
+flask==3.0.0
+flask-cors==4.0.0
+gunicorn==23.0.0
+gevent==25.9.1
+fastmcp==2.14.1

@@ -1,0 +1,54 @@
+{
+  "target_id": "example_target_001",
+  "name": "Example Target System",
+  "description": "Template for target system configuration",
+  "type": "llm_application|web_app|api|network_host",
+  "active": true,
+  
+  "network": {
+    "url": "http://localhost:8080",
+    "host": "localhost",
+    "port": 8080,
+    "protocol": "http|https",
+    "base_path": "/api"
+  },
+  
+  "endpoints": {
+    "chat": "/api/chat",
+    "workspace": "/api/workspace",
+    "custom_endpoint": "/api/custom"
+  },
+  
+  "authentication": {
+    "enabled": false,
+    "type": "bearer|api_key|basic|none",
+    "api_key": "${ENV:TARGET_API_KEY}",
+    "token": "${ENV:TARGET_TOKEN}",
+    "username": "${ENV:TARGET_USERNAME}",
+    "password": "${ENV:TARGET_PASSWORD}"
+  },
+  
+  "known_info": {
+    "application": "Application Name",
+    "version": "1.0.0",
+    "services": ["service1", "service2"],
+    "open_ports": [80, 443],
+    "notes": "Any additional known information"
+  },
+  
+  "test_constraints": {
+    "max_requests_per_second": 10,
+    "timeout_seconds": 30,
+    "safe_mode": true,
+    "allowed_operations": ["read", "query", "enumerate"],
+    "forbidden_operations": ["delete", "modify_system", "data_destruction"]
+  },
+  
+  "metadata": {
+    "environment": "local|dev|staging|production",
+    "owner": "team_name",
+    "created": "2025-11-23",
+    "last_tested": null,
+    "notes": "Additional context or notes about this target"
+  }
+}
