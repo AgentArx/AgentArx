@@ -1,0 +1,102 @@
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${OLLAMA_HOST_PORT:-11434}:11434"
+    environment:
+      # Low-RAM settings
+      OLLAMA_KEEP_ALIVE: "0m"
+      OLLAMA_NUM_PARALLEL: "1"
+      OLLAMA_MAX_LOADED_MODELS: "1"
+      OLLAMA_NUM_CTX: "1024"
+      # Bind on all interfaces inside the container
+      OLLAMA_HOST: "0.0.0.0:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    healthcheck:
+      # Use a built-in command (no curl inside ollama image)
+      test: ["CMD", "ollama", "list"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    mem_limit: "3g"
+    networks:
+      - llmnet
+
+  # One-shot init to ensure models are present on boot
+  ollama-init:
+    image: curlimages/curl:8.9.1
+    container_name: ollama-init
+    depends_on:
+      ollama:
+        condition: service_healthy
+    restart: "no"
+    command:
+      - sh
+      - -lc
+      - |
+        set -e
+        echo "Waiting for Ollama..."
+        until curl -fsS http://ollama:11434/api/tags >/dev/null; do sleep 1; done
+        echo "Pulling chat model qwen2.5:1.5b-instruct..."
+        curl -fsS -X POST http://ollama:11434/api/pull -H "Content-Type: application/json" -d '{"name":"qwen2.5:1.5b-instruct"}'
+        echo "Pulling embedding model nomic-embed-text..."
+        curl -fsS -X POST http://ollama:11434/api/pull -H "Content-Type: application/json" -d '{"name":"nomic-embed-text"}'
+        echo "Model pulls done."
+    networks:
+      - llmnet
+
+  anythingllm:
+    image: mintplexlabs/anythingllm:latest
+    container_name: anything-llm
+    restart: unless-stopped
+    depends_on:
+      - ollama
+      - ollama-init
+    ports:
+      # Change ANYTHINGLLM_HOST_PORT in .env if 3301 conflicts
+      # Bind to 0.0.0.0 to allow access from other containers
+      - "0.0.0.0:${ANYTHINGLLM_HOST_PORT:-3301}:3001"
+    environment:
+      STORAGE_DIR: "/app/server/storage"
+      VECTOR_DB: "lancedb"          # force local on-disk LanceDB
+      JWT_SECRET: "${JWT_SECRET}"
+      PORT: "3001"
+      DISABLE_TELEMETRY: "true"
+    volumes:
+      - /tmp/anythingllm_storage:/app/server/storage
+    mem_limit: "512m"
+    networks:
+      - llmnet
+
+  # One-shot helper that prints URLs and setup steps
+  print-urls:
+    image: curlimages/curl:8.9.1
+    container_name: print-urls
+    depends_on:
+      - anythingllm
+    environment:
+      - OLLAMA_HOST_PORT=${OLLAMA_HOST_PORT:-11434}
+      - ANYTHINGLLM_HOST_PORT=${ANYTHINGLLM_HOST_PORT:-3301}
+    restart: "no"
+    command:
+      - sh
+      - -lc
+      - |
+        set -e
+        # Wait for endpoints to respond
+        echo "Waiting for services..."
+        until curl -fsS http://ollama:11434/api/tags >/dev/null; do sleep 1; done
+        until curl -fsS http://anything-llm:3001/ >/dev/null; do sleep 1; done
+        echo "Ready and running"
+    networks:
+      - llmnet
+
+volumes:
+  ollama_data:
+
+networks:
+  llmnet:
+    driver: bridge
