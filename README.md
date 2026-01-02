@@ -8,6 +8,10 @@ AgentArx is a cooperative multi-agent system for automated security testing usin
 
 ## Quick Start
 
+1. Install requirements.txt
+2. Update configs: see [configuration files section](#configuration-files)
+3. Run either the web UI or command line (see below)
+
 ### Web UI
 ```bash
 # Production (gunicorn):
