@@ -86,9 +86,21 @@ python -m agentarx.main --help
 ## Configuration Files
 
 Remember to remove any `.example` suffix for your copy of the config file.
+Please update `.env` and 'target_config.json`.  Changing promp yamls is optional.
 
 - **`.env`** - Environment variables (LLM API keys, reporter settings, MCP server URL)
 - **`src/agentarx/config/target_config.json`** - Target system details (URL, credentials, schema)
+  - Only `target_id`, `name`, `network`, `url` are required.  Can delete rest.
+  - Sample minimal target config
+    '''JSON
+    {
+      "target_id": "my_target_001",
+      "name": "My Test Target",
+      "network": {
+        "url": "http://localhost:8080"
+      }
+    }
+    '''
 - **`src/agentarx/config/prompts/*.yaml`** - Agent system prompts (recon, analyze, attack, report)
 
 
