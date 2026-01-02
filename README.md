@@ -85,6 +85,8 @@ python -m agentarx.main --help
 
 ## Configuration Files
 
+Remember to remove any `.example` suffix for your copy of the config file.
+
 - **`.env`** - Environment variables (LLM API keys, reporter settings, MCP server URL)
 - **`src/agentarx/config/target_config.json`** - Target system details (URL, credentials, schema)
 - **`src/agentarx/config/prompts/*.yaml`** - Agent system prompts (recon, analyze, attack, report)
