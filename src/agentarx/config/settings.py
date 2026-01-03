@@ -182,6 +182,7 @@ class Settings:
         # Execution Configuration
         self.max_recon_llm_calls: int = int(os.getenv("MAX_RECON_LLM_CALLS", "15"))
         self.max_attack_llm_calls: int = int(os.getenv("MAX_ATTACK_LLM_CALLS", "20"))
+        self.max_cooperative_iterations: int = int(os.getenv("MAX_COOPERATIVE_ITERATIONS", "5"))
         
         # Reporter Configuration
         self.reporter_type: str = os.getenv("REPORTER_TYPE", "local")

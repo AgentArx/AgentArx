@@ -37,7 +37,7 @@ class AgentArxOrchestrator:
     
     def execute_assessment(self, 
                           attack_json_path: str,
-                          max_iterations: int = 5,
+                          max_iterations: int = None,
                           export_findings: bool = False,
                           start_from: str = None) -> Dict[str, Any]:
         """
@@ -48,13 +48,17 @@ class AgentArxOrchestrator:
         
         Args:
             attack_json_path: Path to attack definition JSON file
-            max_iterations: Maximum feedback loop iterations
+            max_iterations: Maximum feedback loop iterations (defaults to MAX_COOPERATIVE_ITERATIONS)
             export_findings: Whether to export results to configured reporter
             start_from: Phase to start from (analysis, attack, report) - loads previous results
             
         Returns:
             Complete assessment results with report
         """
+        # Use default from settings if not provided
+        if max_iterations is None:
+            max_iterations = settings.max_cooperative_iterations
+        
         # 1. Initialize session (start logging early)
         self._initialize_session(attack_json_path, start_from)
         
