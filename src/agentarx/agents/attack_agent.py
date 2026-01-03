@@ -156,9 +156,30 @@ class AttackAgent:
             print(f"   💭 LLM call {call_num}/{max_calls}...")
             
             # Truncate message history to prevent context overflow
-            # Keep system prompt + last 10 messages (5 exchanges)
-            if len(messages) > 11:
-                messages = [messages[0]] + messages[-10:]
+            # Keep system prompt + remove oldest assistant/tool exchanges
+            if len(messages) > 15:
+                # Always keep system prompt at index 0
+                system_msg = messages[0]
+                # Remove messages from position 1 until we're under limit
+                # Skip in chunks to avoid breaking tool call/response pairs
+                messages_to_keep = [system_msg]
+                i = len(messages) - 12  # Keep last ~12 messages
+                while i < len(messages):
+                    msg = messages[i]
+                    # If this is a tool message, make sure we have its parent assistant message
+                    if msg.get('role') == 'tool':
+                        # Find the assistant message with tool_calls before this
+                        for j in range(i-1, 0, -1):
+                            if messages[j].get('role') == 'assistant' and messages[j].get('tool_calls'):
+                                # Include from that assistant message onwards
+                                messages_to_keep.extend(messages[j:])
+                                break
+                        break
+                    i += 1
+                else:
+                    # No tool messages found, just keep last N
+                    messages_to_keep.extend(messages[-12:])
+                messages = messages_to_keep
             
             # Get LLM response with tool calling
             response = self.llm_provider.chat_with_tools(messages, tools)
