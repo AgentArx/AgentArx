@@ -112,3 +112,4 @@ See `./demo/README.md` for spinning up:
 1. Target test system, AnythingLLM app
 2. Sample vulnerability tracking system, Defect Dojo
 
+See `demo/github_workflow_example.yml` for an example GitHub workflow that runs as part of CI/CD and does a security scan.
