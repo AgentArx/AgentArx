@@ -90,7 +90,11 @@ class ReconAgent:
         print(f"   - Services discovered: {len(recon_data.discovered_services)}")
         if recon_data.discovered_services:
             for svc in recon_data.discovered_services[:3]:
-                print(f"     • {svc.get('name', 'Unknown')}: {svc.get('description', 'N/A')}")
+                # Handle both dict and non-dict services
+                if isinstance(svc, dict):
+                    print(f"     • {svc.get('name', 'Unknown')}: {svc.get('description', 'N/A')}")
+                else:
+                    print(f"     • {svc}")
         print(f"   - Endpoints found: {len(recon_data.endpoints)}")
         if recon_data.endpoints:
             for ep in recon_data.endpoints[:5]:
