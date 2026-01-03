@@ -225,7 +225,11 @@ class AgentArxOrchestrator:
                     recon_data = self.recon_agent.gather_additional(
                         analysis_data.recon_requests, recon_data, target_config
                     )
-                    continue
+                    # Re-run analysis with updated recon data (don't increment iteration)
+                    print(f"\n{'='*60}")
+                    print("PHASE 2: ANALYSIS & PLANNING (Re-analyzing with new data)")
+                    print(f"{'='*60}")
+                    analysis_data = self.analyze_agent.analyze_and_plan(attack_def, recon_data)
                 
                 # Check if should skip to report
                 if analysis_data.skip_to_report:
