@@ -29,6 +29,7 @@ class OpenAIProvider(BaseLLMProvider):
         
         # Prepare parameters
         temperature_value = kwargs.get('temperature', 0.7)
+        response_format = kwargs.get('response_format')
         
         # Base parameters (no max_tokens to allow maximum context window)
         chat_params = {
@@ -36,6 +37,10 @@ class OpenAIProvider(BaseLLMProvider):
             'messages': messages,
             'timeout': settings.timeout_openai
         }
+        
+        # Add response_format if specified (JSON mode)
+        if response_format:
+            chat_params['response_format'] = response_format
         
         # Try different parameter combinations with error handling
         try:
@@ -72,6 +77,7 @@ class OpenAIProvider(BaseLLMProvider):
         
         # Prepare parameters
         temperature_value = kwargs.get('temperature', settings.llm_temperature)
+        response_format = kwargs.get('response_format')
         
         # Base parameters (no max_tokens to allow maximum context window)
         chat_params = {
@@ -80,10 +86,13 @@ class OpenAIProvider(BaseLLMProvider):
             'timeout': settings.timeout_openai
         }
         
-        # Add tools if provided
+        # Add tools if provided (response_format cannot be used with tools)
         if tools:
             chat_params['tools'] = tools
             chat_params['tool_choice'] = 'auto'
+        elif response_format:
+            # Only add response_format when not using tools
+            chat_params['response_format'] = response_format
         
         # Handle different parameter combinations
         try:

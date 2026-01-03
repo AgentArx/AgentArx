@@ -101,10 +101,13 @@ class AnalyzeAgent:
         prompt_template = prompt_loader.get_template('analyze', 'structured_extraction')
         extraction_prompt = prompt_template.format(reasoning=reasoning)
 
-        response = self.llm_provider.chat([{
-            "role": "system",
-            "content": extraction_prompt
-        }])
+        response = self.llm_provider.chat(
+            messages=[{
+                "role": "system",
+                "content": extraction_prompt
+            }],
+            response_format={"type": "json_object"}
+        )
         
         # Parse JSON and create AnalysisData
         return self._parse_analysis_results(response, reasoning)

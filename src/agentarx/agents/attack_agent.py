@@ -197,8 +197,11 @@ class AttackAgent:
         }
         
         messages.append(extraction_prompt)
-        response = self.llm_provider.chat_with_tools(messages, tools)
-        final_content = response.get('content', '{}')
+        response = self.llm_provider.chat(
+            messages=messages,
+            response_format={"type": "json_object"}
+        )
+        final_content = response
         
         return self._extract_json_from_response(final_content) or {
             "attack_complete": True,

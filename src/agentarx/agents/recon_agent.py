@@ -175,8 +175,17 @@ class ReconAgent:
             
             # Check if LLM is done (no tool calls)
             if not response.get('tool_calls'):
-                # LLM provided final response
-                content = response.get('content', '')
+                # LLM provided final response - request JSON mode for structured output
+                messages.append({"role": "assistant", "content": response.get('content', '')})
+                messages.append({"role": "user", "content": "Please provide the final reconnaissance results in valid JSON format only."})
+                
+                # Use JSON mode for guaranteed valid JSON
+                final_response = self.llm_provider.chat_with_tools(
+                    messages, 
+                    tools=None,  # No tools for final response
+                    response_format={"type": "json_object"}
+                )
+                content = final_response.get('content', '')
                 return self._extract_json_from_response(content)
             
             # Add assistant message to history
@@ -226,28 +235,55 @@ class ReconAgent:
         return "\n".join(hints)
     
     def _extract_json_from_response(self, content: str) -> Dict[str, Any]:
-        """Extract JSON from LLM response (handles markdown code blocks)"""
+        """Extract JSON from LLM response with robust error handling"""
+        import re
+        
+        # Try direct parse first
         try:
-            # Try direct parse
             return json.loads(content)
-        except json.JSONDecodeError:
-            # Try to find JSON in markdown code blocks
-            import re
-            json_match = re.search(r'```(?:json)?\s*({.*?})\s*```', content, re.DOTALL)
-            if json_match:
+        except json.JSONDecodeError as e:
+            print(f"⚠️  Direct JSON parse failed: {e}")
+        
+        # Try to extract from markdown code blocks
+        json_match = re.search(r'```(?:json)?\s*({.*?})\s*```', content, re.DOTALL)
+        if json_match:
+            try:
                 return json.loads(json_match.group(1))
-            
-            # Last resort: try to find any JSON object
-            json_match = re.search(r'{.*}', content, re.DOTALL)
-            if json_match:
-                return json.loads(json_match.group(0))
-            
-            # Return minimal structure
-            return {
-                "recon_complete": False,
-                "error": "Could not parse JSON from LLM response",
-                "raw_content": content
-            }
+            except json.JSONDecodeError as e:
+                print(f"⚠️  Markdown block JSON parse failed: {e}")
+        
+        # Try to find JSON object and sanitize
+        json_match = re.search(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', content, re.DOTALL)
+        if json_match:
+            json_str = json_match.group(0)
+            # Attempt to fix common issues
+            json_str = self._sanitize_json(json_str)
+            try:
+                return json.loads(json_str)
+            except json.JSONDecodeError as e:
+                print(f"⚠️  Sanitized JSON parse failed: {e}")
+                print(f"Attempted JSON: {json_str[:200]}...")
+        
+        # Log the problematic response
+        print(f"❌ Failed to extract valid JSON from LLM response")
+        print(f"Response preview: {content[:300]}...")
+        
+        # Return minimal structure
+        return {
+            "recon_complete": False,
+            "error": "Could not parse JSON from LLM response",
+            "raw_content": content[:500]  # Limit size
+        }
+    
+    def _sanitize_json(self, json_str: str) -> str:
+        """Attempt to fix common JSON formatting issues"""
+        import re
+        # Replace single quotes with double quotes (but not in strings)
+        # This is a simple heuristic - not perfect but handles common cases
+        json_str = re.sub(r"(?<!\\)'([^']*?)(?<!\\)'", r'"\1"', json_str)
+        # Remove trailing commas before closing braces/brackets
+        json_str = re.sub(r',\s*([}\]])', r'\1', json_str)
+        return json_str
     
     def _parse_recon_results(self, results: Dict[str, Any], target_config: TargetConfig) -> ReconData:
         """Parse LLM results into ReconData structure"""

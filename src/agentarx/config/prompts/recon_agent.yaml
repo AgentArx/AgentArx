@@ -37,10 +37,12 @@ prompt_templates:
     Your task:
     1. Use available tools (execute_bash, execute_python, crawl_url) to gather intelligence
     2. Discover: services, ports, endpoints, technology stack, system capabilities
-    3. When you have sufficient information (3+ services/endpoints OR no new findings), respond with:
+    3. When you have sufficient information (3+ services/endpoints OR no new findings):
+       - Stop making tool calls
+       - Respond with ONLY valid JSON (no markdown, no explanations)
        - Set "recon_complete": true
-       - Provide structured JSON with all findings
-       - Do NOT make more tool calls
+    
+    CRITICAL: Your final response MUST be valid JSON with double quotes, no trailing commas.
     
     Output format when complete:
     {{
@@ -68,7 +70,9 @@ prompt_templates:
     SPECIFIC REQUESTS:
     {recon_requests}
     
-    Use tools to gather ONLY the requested information. When complete:
+    Use tools to gather ONLY the requested information. When complete, respond with ONLY valid JSON:
+    - Use double quotes for all strings
+    - No trailing commas
     - Set "recon_complete": true
     - Provide JSON with NEW findings only
     - Do NOT repeat previous findings

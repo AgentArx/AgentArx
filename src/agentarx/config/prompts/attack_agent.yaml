@@ -51,8 +51,11 @@ prompt_templates:
        - Set "attack_complete": true
        - Provide structured JSON with all results
        - Do NOT make more tool calls
-    
-    Output format when complete:
+        CRITICAL: Your final response MUST be ONLY valid JSON with:
+    - Use double quotes for all strings and property names
+    - No trailing commas
+    - No comments or explanatory text outside the JSON
+        Output format when complete:
     {{
       "attack_complete": true,
       "attacks_attempted": [
@@ -74,7 +77,14 @@ prompt_templates:
     Safety: Only attack specified target, no lateral movement, document all actions.
   
   force_completion: |
-    Maximum calls reached. Provide your attack summary NOW in JSON format:
+    Maximum calls reached. Provide your attack summary NOW.
+    
+    CRITICAL: Your response MUST be ONLY valid JSON with:
+    - Use double quotes for all strings and property names
+    - No trailing commas
+    - No comments or explanatory text outside the JSON
+    
+    Provide in JSON format:
     {{
       "attack_complete": true,
       "attacks_attempted": [...],

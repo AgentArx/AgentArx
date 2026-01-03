@@ -68,6 +68,11 @@ prompt_templates:
        - Gaps in defenses
        - Areas for further investigation
     
+    CRITICAL: Your response MUST be ONLY valid JSON with:
+    - Use double quotes for all strings and property names
+    - No trailing commas
+    - No comments or explanatory text outside the JSON
+    
     Provide response in JSON format:
     {{
       "executive_summary": {{

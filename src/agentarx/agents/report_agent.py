@@ -163,7 +163,8 @@ class ReportAgent:
         
         # Get LLM synthesis (chat() returns string content directly)
         content = self.llm_provider.chat(
-            messages=[{"role": "user", "content": synthesis_prompt}]
+            messages=[{"role": "user", "content": synthesis_prompt}],
+            response_format={"type": "json_object"}
         )
         
         # Extract JSON from response

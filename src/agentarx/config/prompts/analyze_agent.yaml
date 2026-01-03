@@ -72,6 +72,11 @@ prompt_templates:
     
     Now provide structured output with handoff decision.
     
+    CRITICAL: Your response MUST be ONLY valid JSON with:
+    - Use double quotes for all strings and property names
+    - No trailing commas
+    - No comments or explanatory text outside the JSON
+    
     HANDOFF RULES:
     1. If recon data is INSUFFICIENT (missing versions, auth details, configurations):
        → Set needs_more_recon=true, next_agent_to_call="recon"
