@@ -58,7 +58,16 @@ class OpenAIProvider(BaseLLMProvider):
             elif 'invalid model' in error_str.lower() or 'model not found' in error_str.lower():
                 raise RuntimeError(f"Invalid model '{settings.openai_model}'. Use: gpt-4, gpt-4o, gpt-4o-mini, gpt-4-turbo, or gpt-3.5-turbo")
             
-            if 'temperature' in error_str and 'does not support' in error_str:
+            # Handle response_format not supported (older models or o1 models)
+            if "response_format" in error_str and ("not supported" in error_str or "invalid" in error_str.lower()):
+                print(f"Warning: response_format not supported by {settings.openai_model}, falling back to prompt engineering")
+                if 'response_format' in chat_params:
+                    del chat_params['response_format']
+                try:
+                    response = self.client.chat.completions.create(**chat_params)
+                except Exception as e2:
+                    raise e2
+            elif 'temperature' in error_str and 'does not support' in error_str:
                 # Remove temperature parameter and try with default
                 del chat_params['temperature']
                 try:
@@ -110,7 +119,16 @@ class OpenAIProvider(BaseLLMProvider):
             elif 'invalid model' in error_str.lower() or 'model not found' in error_str.lower():
                 raise RuntimeError(f"Invalid model '{settings.openai_model}'. Use: gpt-4, gpt-4o, gpt-4o-mini, gpt-4-turbo, or gpt-3.5-turbo")
             
-            if 'temperature' in error_str and 'does not support' in error_str:
+            # Handle response_format not supported (older models or o1 models)
+            if "response_format" in error_str and ("not supported" in error_str or "invalid" in error_str.lower()):
+                print(f"Warning: response_format not supported by {settings.openai_model}, falling back to prompt engineering")
+                if 'response_format' in chat_params:
+                    del chat_params['response_format']
+                try:
+                    response = self.client.chat.completions.create(**chat_params)
+                except Exception as e2:
+                    raise e2
+            elif 'temperature' in error_str and 'does not support' in error_str:
                 # Remove temperature parameter and try with default
                 del chat_params['temperature']
                 try:
