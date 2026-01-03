@@ -115,7 +115,15 @@ class AttackAgent:
         if not scenario_hints:
             scenario_hints = "No hints provided"
         
-        services = ', '.join([s.get('name', 'unknown') for s in recon_data.discovered_services[:5]]) or "None identified"
+        # Handle services - may be dicts or other types
+        service_names = []
+        for s in recon_data.discovered_services[:5]:
+            if isinstance(s, dict):
+                service_names.append(s.get('name', 'unknown'))
+            else:
+                service_names.append(str(s))
+        services = ', '.join(service_names) if service_names else "None identified"
+        
         tech_stack = ', '.join(recon_data.tech_stack[:5]) if recon_data.tech_stack else "Not identified"
         # Ensure all endpoints are strings; if dict, use 'path' if present, else str(endpoint)
         endpoints_list = []
