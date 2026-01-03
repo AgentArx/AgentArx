@@ -170,6 +170,11 @@ class ReconAgent:
         while call_count < max_calls:
             call_count += 1
             
+            # Truncate message history to prevent context overflow
+            # Keep system prompt + last 10 messages (5 exchanges)
+            if len(messages) > 11:
+                messages = [messages[0]] + messages[-10:]
+            
             # Call LLM with tools
             response = self.llm_provider.chat_with_tools(messages, tools)
             

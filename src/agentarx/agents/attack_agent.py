@@ -155,6 +155,11 @@ class AttackAgent:
         for call_num in range(1, max_calls + 1):
             print(f"   💭 LLM call {call_num}/{max_calls}...")
             
+            # Truncate message history to prevent context overflow
+            # Keep system prompt + last 10 messages (5 exchanges)
+            if len(messages) > 11:
+                messages = [messages[0]] + messages[-10:]
+            
             # Get LLM response with tool calling
             response = self.llm_provider.chat_with_tools(messages, tools)
             
