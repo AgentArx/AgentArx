@@ -202,8 +202,8 @@ class AgentArxOrchestrator:
             print(f"ITERATION {iteration}/{max_iterations}")
             print(f"{'='*60}\n")
             
-            # Phase 2: Analysis
-            if not start_from or start_from == 'analysis':
+            # Phase 2: Analysis (start_from only applies to first iteration)
+            if not start_from or start_from == 'analysis' or iteration > 1:
                 if recon_data is None:
                     raise RuntimeError("Cannot execute analysis phase: recon_data is None.")
                 
@@ -243,8 +243,8 @@ class AgentArxOrchestrator:
                 )
                 print(f"✅ Analysis complete\n")
             
-            # Phase 3: Attack
-            if not start_from or start_from in ['analysis', 'attack']:
+            # Phase 3: Attack (start_from only applies to first iteration)
+            if not start_from or start_from in ['analysis', 'attack'] or iteration > 1:
                 if recon_data is None or analysis_data is None:
                     raise RuntimeError("Cannot execute attack phase: missing prerequisite data.")
                 

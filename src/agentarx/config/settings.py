@@ -153,6 +153,7 @@ class Settings:
         self.openai_api_key: Optional[str] = os.getenv("OPENAI_API_KEY")
         self.openai_model: str = os.getenv("OPENAI_MODEL", "gpt-4")
         self.llm_temperature: float = float(os.getenv("LLM_TEMPERATURE", "0.7"))
+        self.max_completion_tokens: Optional[int] = int(os.getenv("MAX_COMPLETION_TOKENS")) if os.getenv("MAX_COMPLETION_TOKENS") else None
         
         # Reporter Configuration (generic for any vulnerability tracker)
         self.reporter_url: Optional[str] = os.getenv("REPORTER_URL")

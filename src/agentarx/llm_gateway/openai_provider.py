@@ -30,6 +30,7 @@ class OpenAIProvider(BaseLLMProvider):
         # Prepare parameters
         temperature_value = kwargs.get('temperature', 0.7)
         response_format = kwargs.get('response_format')
+        max_completion_tokens = kwargs.get('max_completion_tokens', settings.max_completion_tokens)
         
         # Base parameters (no max_tokens to allow maximum context window)
         chat_params = {
@@ -41,6 +42,10 @@ class OpenAIProvider(BaseLLMProvider):
         # Add response_format if specified (JSON mode)
         if response_format:
             chat_params['response_format'] = response_format
+        
+        # Add max_completion_tokens if specified (limits output length)
+        if max_completion_tokens:
+            chat_params['max_completion_tokens'] = max_completion_tokens
         
         # Try different parameter combinations with error handling
         try:
@@ -87,6 +92,7 @@ class OpenAIProvider(BaseLLMProvider):
         # Prepare parameters
         temperature_value = kwargs.get('temperature', settings.llm_temperature)
         response_format = kwargs.get('response_format')
+        max_completion_tokens = kwargs.get('max_completion_tokens', settings.max_completion_tokens)
         
         # Base parameters (no max_tokens to allow maximum context window)
         chat_params = {
@@ -102,6 +108,10 @@ class OpenAIProvider(BaseLLMProvider):
         elif response_format:
             # Only add response_format when not using tools
             chat_params['response_format'] = response_format
+        
+        # Add max_completion_tokens if specified (limits output length)
+        if max_completion_tokens:
+            chat_params['max_completion_tokens'] = max_completion_tokens
         
         # Handle different parameter combinations
         try:
